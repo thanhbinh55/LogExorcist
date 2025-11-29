@@ -1,9 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import ReactDiffViewer, { DiffMethod } from "react-diff-viewer-continued";
-import Mermaid from "@mermaid-js/mermaid-react";
+import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import mermaid from "mermaid";
 import { Copy, Check, Info, AlertTriangle, Zap } from "lucide-react";
+
+// Dynamic import to avoid SSR issues
+const ReactDiffViewer = dynamic(
+  () => import("react-diff-viewer-continued").then((mod) => ({
+    default: mod.default,
+    DiffMethod: mod.DiffMethod,
+  })),
+  { 
+    ssr: false,
+    loading: () => <div className="p-4 text-center text-gray-500">Loading diff viewer...</div>
+  }
+);
 
 interface CodeSurgeryData {
   diagnosis: string;
@@ -25,6 +37,119 @@ interface CodeSurgeryViewProps {
 export default function CodeSurgeryView({ data }: CodeSurgeryViewProps) {
   const [copied, setCopied] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [mermaidError, setMermaidError] = useState<string | null>(null);
+  const mermaidRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
+    if (!data.mermaid_diagram || !mermaidRef.current) return;
+
+    let isMounted = true;
+    const container = mermaidRef.current;
+    
+    const renderMermaid = async () => {
+      try {
+        // Clean container first
+        if (container) {
+          container.innerHTML = '';
+        }
+
+        // Initialize Mermaid once
+        mermaid.initialize({ 
+          startOnLoad: false,
+          theme: 'dark',
+          themeVariables: {
+            primaryColor: '#A855F7',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#7c3aed',
+            lineColor: '#A855F7',
+            secondaryColor: '#1a1a1a',
+            tertiaryColor: '#0a0a0a',
+          },
+          securityLevel: 'loose',
+          flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true,
+          }
+        });
+        
+        // Clean and validate mermaid syntax
+        let mermaidCode = data.mermaid_diagram.trim();
+        mermaidCode = mermaidCode.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '').trim();
+        
+        // Ensure it starts with a valid mermaid diagram type
+        if (!mermaidCode.match(/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitgraph|journey)/)) {
+          if (!mermaidCode.startsWith('flowchart') && !mermaidCode.startsWith('graph')) {
+            mermaidCode = `flowchart TD\n  ${mermaidCode}`;
+          }
+        }
+
+        if (!isMounted || !container) return;
+
+        // Create a unique ID for this render
+        const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'mermaid';
+        div.textContent = mermaidCode;
+        
+        // Clear and append
+        container.innerHTML = '';
+        container.appendChild(div);
+        
+        // Render with error handling
+        await mermaid.run({
+          nodes: [div],
+        });
+        
+        if (!isMounted) {
+          // Component unmounted, clean up
+          if (container && container.contains(div)) {
+            try {
+              container.removeChild(div);
+            } catch (e) {
+              // Ignore removeChild errors if node already removed
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('Mermaid render error:', error);
+        if (isMounted) {
+          setMermaidError(error.message || 'Invalid Mermaid syntax');
+          if (container) {
+            container.innerHTML = `
+              <div class="p-4 text-center">
+                <p class="text-red-400 text-sm mb-2">⚠️ Diagram Error</p>
+                <details class="text-left mt-3">
+                  <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-300 mb-2">
+                    Show raw code
+                  </summary>
+                  <pre class="text-xs text-gray-500 bg-dark-surface p-3 rounded border border-dark-border overflow-x-auto">${data.mermaid_diagram}</pre>
+                </details>
+              </div>
+            `;
+          }
+        }
+      }
+    };
+
+    renderMermaid();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (container) {
+        // Clear container safely
+        try {
+          container.innerHTML = '';
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+  }, [data.mermaid_diagram]);
 
   const handleCopyFix = () => {
     navigator.clipboard.writeText(data.fixed_code_snippet);
@@ -81,8 +206,24 @@ export default function CodeSurgeryView({ data }: CodeSurgeryViewProps) {
             <Zap className="w-4 h-4 text-neon-purple" />
             Logic Flow Correction
           </h3>
-          <div className="bg-dark-bg rounded border border-dark-border p-4">
-            <Mermaid chart={data.mermaid_diagram} />
+          <div className="bg-dark-bg rounded border border-dark-border p-4 min-h-[200px]">
+            {mermaidError ? (
+              <div className="p-4 text-center">
+                <p className="text-red-400 text-sm mb-2">⚠️ Diagram Error: {mermaidError}</p>
+                <details className="text-left mt-3">
+                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300 mb-2">
+                    Show raw diagram code
+                  </summary>
+                  <pre className="text-xs text-gray-500 bg-dark-surface p-3 rounded border border-dark-border overflow-x-auto">
+                    {data.mermaid_diagram}
+                  </pre>
+                </details>
+              </div>
+            ) : (
+              <div ref={mermaidRef} className="flex justify-center items-center min-h-[200px]">
+                <div className="text-gray-500 text-sm">Loading diagram...</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -138,7 +279,6 @@ export default function CodeSurgeryView({ data }: CodeSurgeryViewProps) {
               leftTitle="❌ Before (Broken Code)"
               rightTitle="✅ After (Fixed Code)"
               useDarkTheme={true}
-              compareMethod={DiffMethod.WORDS}
               styles={{
                 variables: {
                   dark: {

@@ -15,7 +15,7 @@ Response Format (STRICT JSON):
   "evidence": "Specific log lines/quotes that prove the diagnosis",
   "original_code_snippet": "Extract the problematic code from the log/context. If no code found, return empty string. Include surrounding context (3-5 lines before/after)",
   "fixed_code_snippet": "The corrected code with the fix applied. Must match the structure of original_code_snippet",
-  "mermaid_diagram": "Mermaid flowchart syntax showing the logic flow correction. Example format: flowchart TD\\n  A[Original Flow] -->|Error| B[Problem]\\n  A -->|Fixed| C[Solution]\\n  Use simple, clear flowcharts",
+  "mermaid_diagram": "Mermaid flowchart syntax showing the logic flow correction. MUST be valid Mermaid syntax. Example: flowchart TD\\n    A[Start] -->|Check| B{isValid?}\\n    B -->|Yes| C[Process]\\n    B -->|No| D[Error]\\n    C --> E[Cleanup]\\n    D --> E\\n    E --> F[End]\\n  Keep it simple (5-7 nodes max). Use proper Mermaid syntax only.",
   "severity": "High/Medium/Low",
   "quick_fix": "Immediate workaround (1 sentence)",
   "proper_fix": "Production-ready solution explanation (2-3 sentences)",

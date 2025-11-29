@@ -31,6 +31,7 @@ interface CodeSurgeryData {
 
 export default function Home() {
   const [logInput, setLogInput] = useState("");
+  const [codeInput, setCodeInput] = useState(""); // Separate input for code
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<AnalysisHistory[]>([]);
   const [codeSurgeryMode, setCodeSurgeryMode] = useState(true); // Default to Code Surgery mode
@@ -38,6 +39,7 @@ export default function Home() {
   const [isLoadingSurgery, setIsLoadingSurgery] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const codeTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { messages, append, isLoading, setMessages } = useChat({
     api: "/api/chat",
@@ -79,13 +81,20 @@ export default function Home() {
     }
   }, [messages]);
 
-  // Auto-resize textarea
+  // Auto-resize textareas
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [logInput]);
+
+  useEffect(() => {
+    if (codeTextareaRef.current) {
+      codeTextareaRef.current.style.height = "auto";
+      codeTextareaRef.current.style.height = `${codeTextareaRef.current.scrollHeight}px`;
+    }
+  }, [codeInput]);
 
   const handleExorcise = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,12 +106,18 @@ export default function Home() {
       setCodeSurgeryData(null);
       setMessages([]);
 
+      // Combine log and code inputs
+      let combinedInput = logInput;
+      if (codeInput.trim()) {
+        combinedInput = `=== ERROR LOG ===\n${logInput}\n\n=== CODE SNIPPET (Suspected Issue) ===\n${codeInput}`;
+      }
+
       try {
         const response = await fetch("/api/code-surgery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: [{ role: "user", content: logInput }],
+            messages: [{ role: "user", content: combinedInput }],
           }),
         });
 
