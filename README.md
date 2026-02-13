@@ -1,15 +1,15 @@
-# The Log Exorcist 🔮
+# The Log Exorcist 
 
 A cyberpunk-themed AI-powered log analysis and debugging tool built with Next.js 14, Tailwind CSS, and the Vercel AI SDK.
 
 ## Features
 
-- 🕵️ **AI-Powered Analysis**: Sherlock Holmes-style log analysis with root cause detection
-- ⚡ **Real-time Streaming**: Watch the AI analyze your logs in real-time
-- 🎨 **Cyberpunk UI**: Dark mode theme with neon purple accents and monospaced fonts
-- 📝 **Markdown Support**: Beautifully rendered markdown with syntax highlighting
-- 📚 **History**: Save and revisit your recent analyses
-- 🔍 **Split-Screen Layout**: Clean interface for input and output
+- **AI-Powered Analysis**: Sherlock Holmes-style log analysis with root cause detection
+- **Real-time Streaming**: Watch the AI analyze your logs in real-time
+- **Cyberpunk UI**: Dark mode theme with neon purple accents and monospaced fonts
+- **Markdown Support**: Beautifully rendered markdown with syntax highlighting
+- **History**: Save and revisit your recent analyses
+- **Split-Screen Layout**: Clean interface for input and output
 
 ## Getting Started
 
@@ -23,7 +23,7 @@ A cyberpunk-themed AI-powered log analysis and debugging tool built with Next.js
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/thanhbinh55/CursorHackathon.git
 cd CursorHackathon
 ```
 
@@ -63,10 +63,10 @@ pnpm dev
 2. Click "Exorcise Log" to analyze
 3. Watch the AI detective analyze your logs in real-time
 4. Review the structured analysis with:
-   - 🛑 Root cause identification
-   - 🕵️ Evidence from the logs
-   - 💊 Three solution options (Quick Fix, Robust Fix, Dirty Hack)
-   - 🔥 Severity score (1-10)
+   - Root cause identification
+   - Evidence from the logs
+   - Three solution options (Quick Fix, Robust Fix, Dirty Hack)
+   - Severity score (1-10)
 
 ## Tech Stack
 
